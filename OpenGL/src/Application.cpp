@@ -4,6 +4,9 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <Windows.h>
+#include <stdio.h>
+#include "..\tool\CreateDump.h"
 
 #define ASSERT(x) if(!(x)) __debugbreak();
 #define GLCall(x) GLClearError();\
@@ -112,12 +115,30 @@ static unsigned int CreateShader(const std::string& vertexShader, const std::str
 
 int main()
 {
+	char szPath[512] = { 0 };
+	GetModuleFileName(NULL, szPath, sizeof(szPath) - 1);
+	std::string strFilePathTmp = szPath;
+	std::string strDmpPath = "";
+	if (strFilePathTmp.rfind(".exe") != string::npos) {
+		int nIndex = strFilePathTmp.rfind("\\");
+		if (nIndex != -1) {
+			strDmpPath = strFilePathTmp.substr(0, nIndex + 1);
+		}
+	}
+	strDmpPath += "dumpfile";
+	std::cout << strDmpPath << std::endl;
+	CreateDump::Instance()->DeclareDumpFile(strDmpPath);
+
+	int nSub = 0;
+	int nValue = 10 / nSub;
+
 	GLFWwindow* window;
 	if (!glfwInit()) {
 		return -1;
 	}
 
 	window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+
 	if (!window) {
 		glfwTerminate();
 		return -1;
@@ -168,7 +189,8 @@ int main()
 	while (!glfwWindowShouldClose(window)) {
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		GLCall(glDrawElements(GL_TRIANGLES, 6, GL_INT, nullptr));
+		//GLCall(glDrawElements(GL_TRIANGLES, 6, GL_INT, nullptr));
+		glDrawElements(GL_TRIANGLES, 6, GL_INT, nullptr);
 
 		glfwSwapBuffers(window);
 
