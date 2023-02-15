@@ -39,6 +39,18 @@ static ShaderProgramSource ParseShader(const std::string& filepath)
 	return { ss[0].str(), ss[1].str() };
 }
 
+static std::string ParseShader1(const std::string& filepath)
+{
+	std::ifstream stream;
+	std::string line;
+	std::stringstream sstream;
+	while (getline(stream, line)) {
+		sstream << line << "\n";
+	}
+
+	return sstream.str();
+}
+
 static unsigned int CompileShader(const std::string& source, unsigned int type)
 {
 	unsigned int id = glCreateShader(type);
@@ -99,10 +111,16 @@ int main()
 
 	std::cout << glGetString(GL_VERSION) << std::endl;
 	
-	float pos[6] = {
+	float pos[] = {
 		-0.5f, -0.5f,
-		0.0f, 0.5f,
-		0.5f, -0.5f
+		 0.5f, -0.5f,
+		 0.5f,  0.5f,
+		-0.5f,  0.5f
+	};
+
+	unsigned int indices[] = {
+		0, 1, 2,
+		2, 3, 0
 	};
 
 	unsigned int buffer;
@@ -112,6 +130,11 @@ int main()
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (const void*)0);
+
+	unsigned int ibo;
+	glGenBuffers(1, &ibo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	ShaderProgramSource source = ParseShader("res/shaders/Basic.shader");
 	std::cout << "Vertex" << std::endl;
@@ -125,7 +148,7 @@ int main()
 	while (!glfwWindowShouldClose(window)) {
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
 		glfwSwapBuffers(window);
 
