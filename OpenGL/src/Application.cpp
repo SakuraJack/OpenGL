@@ -76,6 +76,7 @@ static std::string ParseShader1(const std::string& filepath)
 
 static unsigned int CompileShader(const std::string& source, unsigned int type)
 {
+	//创建OpenGL着色器
 	unsigned int id = glCreateShader(type);
 	const char* src = source.c_str();
 	glShaderSource(id, 1, &src, nullptr);
@@ -102,8 +103,10 @@ static unsigned int CreateShader(const std::string& vertexShader, const std::str
 	unsigned int vs = CompileShader(vertexShader, GL_VERTEX_SHADER);
 	unsigned int fs = CompileShader(fragmentShader, GL_FRAGMENT_SHADER);
 
+	//为着色器程序附加着色器
 	glAttachShader(program, vs);
 	glAttachShader(program, fs);
+	//链接着色器程序
 	glLinkProgram(program);
 	glValidateProgram(program);
 
@@ -115,7 +118,7 @@ static unsigned int CreateShader(const std::string& vertexShader, const std::str
 
 int main()
 {
-	char szPath[512] = { 0 };
+	/*char szPath[512] = { 0 };
 	GetModuleFileName(NULL, szPath, sizeof(szPath) - 1);
 	std::string strFilePathTmp = szPath;
 	std::string strDmpPath = "";
@@ -127,12 +130,22 @@ int main()
 	}
 	strDmpPath += "dumpfile";
 	std::cout << strDmpPath << std::endl;
-	CreateDump::Instance()->DeclareDumpFile(strDmpPath);
+	CreateDump::Instance()->DeclareDumpFile(strDmpPath);*/
 
 	GLFWwindow* window;
 	if (!glfwInit()) {
 		return -1;
 	}
+
+	//设置OpenGL主版本3
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	//设置OpenGL次版本3 
+	//当前OpenGL版本3.3
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	//设置OpenGL配置为核心配置文件
+	//CORE 核心配置  COMPAT 兼容性配置
+	//核心配置里 0不是一个对象 兼容性配置里 0是默认对象
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
 
@@ -163,24 +176,24 @@ int main()
 		2, 3, 0
 	};
 
-	unsigned int buffer;
-	glGenBuffers(1, &buffer);
-	glBindBuffer(GL_ARRAY_BUFFER, buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(pos), pos, GL_STATIC_DRAW);
+	unsigned int VAO;
+	GLCall(glGenVertexArrays(1, &VAO));
+	GLCall(glBindVertexArray(VAO));
 
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (const void*)0);
+	unsigned int buffer;
+	GLCall(glGenBuffers(1, &buffer));
+	GLCall(glBindBuffer(GL_ARRAY_BUFFER, buffer));
+	GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(pos), pos, GL_STATIC_DRAW));
+
+	GLCall(glEnableVertexAttribArray(0));
+	GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (const void*)0));
 
 	unsigned int ibo;
-	glGenBuffers(1, &ibo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	GLCall(glGenBuffers(1, &ibo));
+	GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
+	GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW));
 
 	ShaderProgramSource source = ParseShader("res/shaders/Basic.shader");
-	std::cout << "Vertex" << std::endl;
-	std::cout << source.vertexSource << std::endl;
-	std::cout << "Fragment" << std::endl;
-	std::cout << source.fragmentSource << std::endl;
 
 	unsigned int shader = CreateShader(source.vertexSource, source.fragmentSource);
 	GLCall(glUseProgram(shader));
@@ -188,11 +201,21 @@ int main()
 	GLCall(int location = glGetUniformLocation(shader, "u_Color"));
 	ASSERT(location != -1);
 
+	GLCall(glBindVertexArray(0));
+	GLCall(glUseProgram(0));
+	GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
+	GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+
 	float r = 0.0f;
 	float increment = 0.05f;
 
 	while (!glfwWindowShouldClose(window)) {
 		GLCall(glClear(GL_COLOR_BUFFER_BIT));
+
+		GLCall(glUseProgram(shader));
+
+		GLCall(glBindVertexArray(VAO));
+		GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
 
 		GLCall(glUniform4f(location, r, 0.3f, 0.8f, 1.0f));
 		GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
