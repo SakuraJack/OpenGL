@@ -129,9 +129,6 @@ int main()
 	std::cout << strDmpPath << std::endl;
 	CreateDump::Instance()->DeclareDumpFile(strDmpPath);
 
-	int nSub = 0;
-	int nValue = 10 / nSub;
-
 	GLFWwindow* window;
 	if (!glfwInit()) {
 		return -1;
@@ -145,6 +142,8 @@ int main()
 	}
 
 	glfwMakeContextCurrent(window);
+	//设置调用线程里的上下文窗口刷新帧率
+	glfwSwapInterval(1);
 
 	if (glewInit() != GLEW_OK) {
 		std::cout << "Error" << std::endl;
@@ -184,13 +183,26 @@ int main()
 	std::cout << source.fragmentSource << std::endl;
 
 	unsigned int shader = CreateShader(source.vertexSource, source.fragmentSource);
-	glUseProgram(shader);
+	GLCall(glUseProgram(shader));
+
+	GLCall(int location = glGetUniformLocation(shader, "u_Color"));
+	ASSERT(location != -1);
+
+	float r = 0.0f;
+	float increment = 0.05f;
 
 	while (!glfwWindowShouldClose(window)) {
-		glClear(GL_COLOR_BUFFER_BIT);
+		GLCall(glClear(GL_COLOR_BUFFER_BIT));
 
-		//GLCall(glDrawElements(GL_TRIANGLES, 6, GL_INT, nullptr));
-		glDrawElements(GL_TRIANGLES, 6, GL_INT, nullptr);
+		GLCall(glUniform4f(location, r, 0.3f, 0.8f, 1.0f));
+		GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+
+		if (r > 1.0f)
+			increment = -0.05f;
+		else if (r < 0.0f)
+			increment = 0.05f;
+		r += increment;
+		std::cout << r << __LINE__ << std::endl;
 
 		glfwSwapBuffers(window);
 
